@@ -28,7 +28,8 @@ def import_f2py_mod(name: str):
 
 
 def nm2lt7(short_nm: float, long_nm: float, step_cminv: float = 20) -> tuple[float, float, float]:
-    """converts wavelength in nm to cm^-1
+    """
+    converts wavelength in nm to cm^-1
     minimum meaningful step is 20, but 5 is minimum before crashing lowtran
 
     short: shortest wavelength e.g. 200 nm
@@ -45,84 +46,55 @@ def nm2lt7(short_nm: float, long_nm: float, step_cminv: float = 20) -> tuple[flo
     return short, long, N
 
 
-def loopuserdef(c1: dict[str, Any]) -> xarray.Dataset:
+def loopangle(context: dict[str, Any]) -> xarray.Dataset:
     """
-    golowtran() is for scalar parameters only
-    (besides vector of wavelength, which Lowtran internally loops over)
-
-    wmol, p, t must all be vector(s) of same length
+    loop over "ANGLE" when context["angle"] is a vector
     """
-
-    wmol = np.atleast_2d(c1["wmol"])
-    P = np.atleast_1d(c1["p"])
-    T = np.atleast_1d(c1["t"])
-    time = np.atleast_1d(c1["time"])
-
-    assert (
-        wmol.shape[0] == len(P) == len(T) == len(time)
-    ), "WMOL, P, T,time must be vectors of equal length"
-
-    N = len(P)
-    # %% 3-D array indexed by metadata
-    TR = xarray.Dataset(coords={"time": time, "wavelength_nm": None, "angle_deg": None})
-
-    for i in range(N):
-        c = c1.copy()
-        c["wmol"] = wmol[i, :]
-        c["p"] = P[i]
-        c["t"] = T[i]
-        c["time"] = time[i]
-
-        TR = TR.merge(golowtran(c))
-
-    #   TR = TR.sort_index(axis=0) # put times in order, sometimes CSV is not monotonic in time.
-
-    return TR
-
-
-def loopangle(c1: dict[str, Any]) -> xarray.Dataset:
-    """
-    loop over "ANGLE"
-    """
-    angles = np.atleast_1d(c1["angle"])
+    angles = np.atleast_1d(context["angle"])
     TR = xarray.Dataset(coords={"wavelength_nm": None, "angle_deg": angles})
 
     for a in angles:
-        c = c1.copy()
+        c = context.copy()
         c["angle"] = a
-        TR = TR.merge(golowtran(c))
+        TR = TR.merge(lowtran(c))
 
     return TR
 
 
-def golowtran(c1: dict[str, Any]) -> xarray.Dataset:
-    """directly run Fortran code"""
-    # %% default parameters
-    c1.setdefault("time", None)
+def lowtran(context: dict[str, Any]) -> xarray.Dataset:
+    """
+    directly run Fortran code
+    """
+    # default parameters
+    context.setdefault("time", None)
+    context.setdefault("ird1", 0)
+    context.setdefault("zmdl", 0)
+    context.setdefault("p", 0)
+    context.setdefault("t", 0)
+    context.setdefault("wmol", [0] * 12)
+    context.setdefault("h1", 0)
+    context.setdefault("h2", 0)
+    context.setdefault("iseasn", 0)
+    context.setdefault("ivulc", 0)
+    context.setdefault("icstl", 1)
+    context.setdefault("icld", 0)
+    context.setdefault("range_km", 0)
+    
 
-    defp = ("h1", "h2", "angle", "im", "iseasn", "ird1", "range_km", "zmdl", "p", "t")
-    for p in defp:
-        c1.setdefault(p, 0)
-
-    c1.setdefault("wmol", [0] * 12)
-    # %% input check
-    assert len(c1["wmol"]) == 12, "see Lowtran user manual for 12 values of WMOL"
-    assert np.isfinite(c1["h1"]), "per Lowtran user manual Table 14, H1 must always be defined"
-    # %% setup wavelength
-    c1.setdefault("wlstep", 20)
-    if c1["wlstep"] < 5:
+    # input check
+    assert len(context["wmol"]) == 12, "see Lowtran user manual for 12 values of WMOL"
+    assert np.isfinite(context["h1"]), "per Lowtran user manual Table 14, H1 must always be defined"
+    # setup wavelength
+    context.setdefault("wlstep", 20)
+    if context["wlstep"] < 5:
         logging.critical("minimum resolution 5 cm^-1, specified resolution 20 cm^-1")
 
-    wlshort, wllong, nwl = nm2lt7(c1["wlshort"], c1["wllong"], c1["wlstep"])
+    wlshort, wllong, nwl = nm2lt7(context["wlshort"], context["wllong"], context["wlstep"])
 
     if not 0 < wlshort and wllong <= 50000:
         logging.critical("specified model range 0 <= wavelength [cm^-1] <= 50000")
-    # %% invoke lowtran
-    """
-    Note we invoke case "3a" from table 14, only observer altitude and apparent
-    angle are specified
-    """
-
+        
+    # invoke lowtran
     try:
         lowtran7 = import_f2py_mod("lowtran7")
     except ImportError:
@@ -130,27 +102,31 @@ def golowtran(c1: dict[str, Any]) -> xarray.Dataset:
         lowtran7 = import_f2py_mod("lowtran7")
 
     Tx, V, Alam, trace, unif, suma, irrad, sumvv = lowtran7.lwtrn7(
-        True,
-        nwl,
-        wllong,
-        wlshort,
-        c1["wlstep"],
-        c1["model"],
-        c1["itype"],
-        c1["iemsct"],
-        c1["im"],
-        c1["iseasn"],
-        c1["ird1"],
-        c1["zmdl"],
-        c1["p"],
-        c1["t"],
-        c1["wmol"],
-        c1["h1"],
-        c1["h2"],
-        c1["angle"],
-        c1["range_km"],
+        True,               # Enable Python interface
+        nwl,                # wavelength step
+        wllong,             # wavelength max
+        wlshort,            # wavelength min
+        context["wlstep"],  # wavelenght step in cm-1
+        context["model"],   # card1 atmosphere model (0-7)
+        context["itype"],   # card1 path type (1-3)
+        context["iemsct"],  # card1 execution type (0-3)
+        context["im"],      # card1 scattering off/on (0-1)
+        context["ihaze"],   # card2 aerosol type (0-10)
+        context["iseasn"],  # card2 seasonal aerosol (0-2)
+        context["ivulc"],   # card2 aerosol profile and stratospheric aerosol (0-8)
+        context["icstl"],   # card2 air mass character (1-10) >> HAZE 3 ONLY
+        context["icld"],    # card2 cloud and rain models (0-20)
+        context["ird1"],    # activate optional card2C off/on (0-1) for custom path
+        context["zmdl"],    # card2C altitude layer boudnary [km]
+        context["p"],       # card2C pressure layer boundary
+        context["t"],       # card2C temperature layer boundary
+        context["wmol"],    # card2C individual molecular species, see T11A p32
+        context["h1"],      # card3 initial altitude [km]
+        context["h2"],      # card3 final altitude [km] >> ITYPE 2 ONLY
+        context["angle"],   # card3 initial zenith angle from h1 [deg]
+        context["range_km"],# card3 path length [km]
     )
-
+    
     dims = ("time", "wavelength_nm", "angle_deg")
     TR = xarray.Dataset(
         {
@@ -160,9 +136,9 @@ def golowtran(c1: dict[str, Any]) -> xarray.Dataset:
             "pathscatter": (dims, irrad[:, 2][None, :, None]),
         },
         coords={
-            "time": [c1["time"]],
+            "time": [context["time"]],
             "wavelength_nm": Alam * 1e3,
-            "angle_deg": [c1["angle"]],
+            "angle_deg": [context["angle"]],
         },
     )
 

@@ -11,16 +11,7 @@ developed on CDC CYBER, currently runs on 32-bit single float--this can cause lo
 precision, future would like to ensure full LOWTRAN7 code can run at 64-bit double float.
 
 user manual:
-www.dtic.mil/dtic/tr/fulltext/u2/a206773.pdf
+https://apps.dtic.mil/sti/pdfs/ADA206773.pdf
 """
 
-from .base import nm2lt7, golowtran
-from .scenarios import (
-    scatter,
-    irradiance,
-    radiance,
-    transmittance,
-    horizrad,
-    horiztrans,
-    userhoriztrans,
-)
+from .base import *

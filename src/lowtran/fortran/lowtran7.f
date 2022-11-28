@@ -1,16 +1,16 @@
       SUBROUTINE LWTRN7(Python,nwl,V1Py,V2Py,DVPy,
-     & TXPy,VPy,ALAMPy,TRACEPy,UNIFPy, SUMAPy,IrradPy,SumVVPy,
-     & MODELPy,ITYPEPy,IEMSCTPy,IMpy,
-     & ISEASNPy,MLpy,IRD1py,
-     & ZMDLpy, Ppy, Tpy,WMOLpy,
-     & H1Py,H2Py,ANGLEPy,RangePy)
+     & TXPy,VPy,ALAMPy,TRACEPy,UNIFPy,SUMAPy,IrradPy,SumVVPy,
+     & MODELPy,ITYPEPy,IEMSCTPy,IMPy,
+     & IHAZEPy,ISEASNPy,IVULCPy,ICSTLPy,ICLDPy,MLPy,IRD1Py,
+     & ZMDLPy,PPy,TPy,WMOLPy,
+     & H1Py,H2Py,ANGLEPy,RANGEPy)
 
-! note MLpy is implicit, don't pass it in from Numpy
+! note MLPy is implicit, don't pass it in from Numpy
       Logical,Intent(in) :: Python
-      Integer,Intent(in) :: nwl,MODELPy,ITYPEPy,IEMSCTPy,IMpy
-      Integer,Intent(in) :: ISEASNpy,MLpy,IRD1py
-      real,intent(in) :: ZMDLpy(mlpy),Ppy(mlpy),Tpy(mlpy),WMOLpy(12)
-      Real, Intent(in)  :: V1Py,V2Py,DVPy,H1Py,H2Py,ANGLEPy,RangePy
+      Integer,Intent(in) :: nwl,MODELPy,ITYPEPy,IEMSCTPy,IMPy
+      Integer,Intent(in) :: IHAZEPy,ISEASNPy,IVULCPy,ICSTLPy,ICLDPy,MLPy,IRD1Py
+      real,intent(in) :: ZMDLPy(MLPy),PPy(MLPy),TPy(MLPy),WMOLPy(12)
+      Real, Intent(in)  :: V1Py,V2Py,DVPy,H1Py,H2Py,ANGLEPy,RANGEPy
       Real, Intent(Out) :: TXPy(nwl,63), VPy(nwl), ALAMPy(nwl),
      & TRACEPy(nwl),UNIFPy(nwl), SUMAPy(nwl), IrradPy(nwl,3),
      & SumVVPy(nwl)
@@ -1011,7 +1011,7 @@ C@    WRITE(IPR,1010) HDATE,HTIME
 !------- CARD 1 -------------------------------------------------------
 
       If (Python) Then
-        MODEL=ModelPy; IType=ITypePy; IEMSCT=IEMSCTPy; IM=IMpy
+        MODEL=ModelPy; IType=ITypePy; IEMSCT=IEMSCTPy; IM=IMPy
         M1=0; M2=0; M3=0; M4=0; M5=0; M6=0; MDEF=0
         IMULT=0
         TBOUND=0; SALB=0; NOPRT=0
@@ -1044,7 +1044,7 @@ C
       If (Python) Then
       !FIXME make it read input parameter
         ISEASN=ISEASNPy
-        IHAZE=0;IVULCN=0; ICSTL=0; ICLD=0; IVSA=0; VIS=0.;
+        IHAZE=IHAZEPy;IVULCN=IVULCPy; ICSTL=ICSTLPy; ICLD=ICLDPy; IVSA=0; VIS=0.;
         WSS=0.; WHH=0.; RAINRT=0.; GNDALT=0.
       Else
        READ(IRD,1200)IHAZE,ISEASN,IVULCN,ICSTL,ICLD,
@@ -1128,7 +1128,7 @@ C
 C*****CARD 2C  USER SUPPLIED ATMOSPHERIC PROFILE
               If (Python) then
               ! ML is number of atmoshperic levels (manual p.42)
-                ML=MLpy; IRD1=IRD1py; IRD2=0
+                ML=MLPy; IRD1=IRD1Py; IRD2=0
                 ! for common blocks instead of reading in AERNSM
                 do ipy2 = 1,ml
                     ZM(ipy2) = ZMDLPy(ipy2) ! ZM = ZMDL
@@ -1234,9 +1234,9 @@ C
       If (Python) Then
         H1 = H1Py;
         H2=H2Py;
-        ANGLE=AnglePy;
+        ANGLE=ANGLEPy;
 !        print*,rangepy
-        Range=RangePy
+        Range=RANGEPy
         Beta=0.; Ro=0; Len=0
       Endif
 

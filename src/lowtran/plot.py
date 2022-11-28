@@ -5,13 +5,13 @@ from matplotlib.pyplot import figure
 from typing import Any
 
 #
-h = 6.62607004e-34
-c = 299792458
+h = 6.62607004e-34 # Planck's constant
+c = 299792458 # speed of light
 UNITS = r"ster$^{-1}$ cm$^{-2}$ $\mu$m$^{-1}$]"
 plotNp = False
 
 
-def scatter(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def scatter(irrad: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
 
     fg = figure()
     axs = fg.subplots(2, 1, sharex=True)
@@ -45,13 +45,13 @@ def scatter(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> Non
     #        ax.set_ylim(1e-8,1)
 
     try:
-        fg.suptitle(f'Obs. to Space: zenith angle: {c1["angle"]} deg., ')
+        fg.suptitle(f'Obs. to Space: zenith angle: {context["angle"]} deg., ')
         # {datetime.utcfromtimestamp(irrad.time.item()/1e9)}
     except (AttributeError, TypeError):
         pass
 
 
-def radiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def radiance(irrad: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
     fg = figure()
     axs = fg.subplots(2, 1, sharex=True)
 
@@ -83,13 +83,13 @@ def radiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> No
         ax.set_ylim(1e-8, 1)
 
     try:
-        fg.suptitle(f'Obs. zenith angle: {c1["angle"]} deg., ')
+        fg.suptitle(f'Obs. zenith angle: {context["angle"]} deg., ')
         # {datetime.utcfromtimestamp(irrad.time.item()/1e9)}
     except (AttributeError, TypeError):
         pass
 
 
-def radtime(TR: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def radtime(TR: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
     """
     make one plot per time for now.
 
@@ -99,17 +99,17 @@ def radtime(TR: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
     """
 
     for t in TR.time:  # for each time
-        irradiance(TR.sel(time=t), c1, log)
+        irradiance(TR.sel(time=t), context, log)
 
 
-def transmission(T: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def transmission(T: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
     ax = figure().gca()
 
     h = ax.plot(T.wavelength_nm, T["transmission"].squeeze())
 
     ax.set_xlabel("wavelength [nm]")
     ax.set_ylabel("transmission (unitless)")
-    ax.set_title(f'Transmittance Ground-Space: Obs. zenith angle {c1["angle"]} deg.')
+    ax.set_title(f'Transmittance Ground-Space: Obs. zenith angle {context["angle"]} deg.')
     # ax.legend(loc='best')
     ax.grid(True)
     if log:
@@ -122,18 +122,18 @@ def transmission(T: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> No
     ax.legend(h, T.angle_deg.values)
 
 
-def irradiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def irradiance(irrad: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
     fg = figure()
     axs = fg.subplots(2, 1, sharex=True)
 
-    #    if c1['isourc'] == 0:
+    #    if context['isourc'] == 0:
     stxt = "Sun's"
-    #    elif c1['isourc'] == 1:
+    #    elif context['isourc'] == 1:
     #        stxt = "Moon's"
     #    else:
-    #        raise ValueError(f'ISOURC={c1["isourc"]} not defined case')
+    #        raise ValueError(f'ISOURC={context["isourc"]} not defined case')
 
-    stxt += f' zenith angle {irrad.angle_deg.values} deg., Obs. height {c1["h1"]} km. '
+    stxt += f' zenith angle {irrad.angle_deg.values} deg., Obs. height {context["h1"]} km. '
     try:
         stxt += np.datetime_as_string(irrad.time)[:-10]
     except (AttributeError, TypeError):
@@ -141,10 +141,10 @@ def irradiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> 
 
     fg.suptitle(stxt)
 
-    if c1["iemsct"] == 3:
+    if context["iemsct"] == 3:
         key = "irradiance"
         transtxt = "Transmittance Observer to Space"
-    elif c1["iemsct"] == 1:
+    elif context["iemsct"] == 1:
         key = "radiance"
         transtxt = "Transmittance Observer to Observer"
 
@@ -166,11 +166,11 @@ def irradiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> 
     ax.invert_xaxis()
     ax.grid(True)
 
-    if c1["iemsct"] == 3:
+    if context["iemsct"] == 3:
         ttxt = "Irradiance "
         ax.set_ylabel("Solar Irradiance [W " + UNITS)
         ax.set_title(ttxt)
-    elif c1["iemsct"] == 1:
+    elif context["iemsct"] == 1:
         ttxt = "Single-scatter Radiance "
         ax.set_ylabel("Radiance [W " + UNITS)
         ax.set_title(ttxt)
@@ -182,13 +182,13 @@ def irradiance(irrad: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> 
     ax.autoscale(True, axis="x", tight=True)
 
 
-def horiz(trans: xarray.Dataset, c1: dict[str, Any], log: bool = False) -> None:
+def horiz(trans: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
 
-    ttxt = f'Transmittance Horizontal \n {c1["range_km"]} km path @ {c1["h1"]} km altitude\n'
+    ttxt = f'Transmittance Horizontal \n {context["range_km"]} km path @ {context["h1"]} km altitude\n'
 
-    if c1["model"] == 0:
-        ttxt += f'User defined atmosphere: pressure: {c1["p"]} mbar, temperature {c1["t"]} K'
-    elif c1["model"] == 5:
+    if context["model"] == 0:
+        ttxt += f'User defined atmosphere: pressure: {context["p"]} mbar, temperature {context["t"]} K'
+    elif context["model"] == 5:
         ttxt += "Subarctic winter atmosphere"
 
     ax = figure().gca()

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """
-
 Total Radiance = atmosphere rad. or boundary rad. + atm. scat. or boundary refl.
 
 Lowtran outputs W cm^-2 ster^-1 micron^-1
