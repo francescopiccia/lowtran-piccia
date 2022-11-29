@@ -33,23 +33,30 @@ def main():
         type=float,
         default=0.0,
     )
-    p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=200)
-    p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=30000)
-    p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
+    p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=200)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=30000)
+    p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     P = p.parse_args()
 
-    c1 = {
-        "zmdl": P.obsalt,
-        "h1": P.obsalt,
-        "range_km": P.range_km,
+    context = {
+        "model": 5, # subarctic winter
+        "itype": 1, # horizontal path
+        "iemsct": 0, # tx mode
+        "im": 0, # single scattering
+        "ird1": 1, # card2C on
+        "ihaze": 5, # urban aerosol
+        "zmdl": P.obsalt, # altitude layer
+        "h1": P.obsalt, # height of tx and rx
+        "range_km": P.range_km, # distance between tx and rx
+        "angle": P.zenang,
         "wlshort": P.short,
         "wllong": P.long,
         "wlstep": P.step,
     }
 
-    TR = lowtran.horiztrans(c1).squeeze()
+    TR = lowtran.lowtran(context).squeeze()
 
-    horiz(TR, c1)
+    horiz(TR, context)
 
     show()
 

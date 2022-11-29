@@ -89,19 +89,6 @@ def radiance(irrad: xarray.Dataset, context: dict[str, Any], log: bool = False) 
         pass
 
 
-def radtime(TR: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
-    """
-    make one plot per time for now.
-
-    TR: 3-D array: time, wavelength, [transmittance, radiance]
-
-    radiance is currently single-scatter solar
-    """
-
-    for t in TR.time:  # for each time
-        irradiance(TR.sel(time=t), context, log)
-
-
 def transmission(T: xarray.Dataset, context: dict[str, Any], log: bool = False) -> None:
     ax = figure().gca()
 

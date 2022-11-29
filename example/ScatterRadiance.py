@@ -13,13 +13,6 @@ Np = (Ilowtran*10000)*lambda_m/(h*c)
 """
 from pathlib import Path
 from matplotlib.pyplot import show
-
-try:
-    import seaborn as sns
-
-    sns.set_context("talk")
-except ImportError:
-    pass
 from argparse import ArgumentParser
 import lowtran
 from lowtran.plot import scatter
@@ -36,36 +29,34 @@ def main():
         type=float,
         default=[0.0, 60, 80],
     )
-    p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=400)
-    p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=700)
-    p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
-    p.add_argument("-o", "--outfn", help="NetCDF4 file to write")
+    p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=400)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=700)
+    p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     p.add_argument(
         "--model",
-        help='0-6, see Card1 "model" reference. 5=subarctic winter',
+        help='0-6, default 5=subarctic winter',
         type=int,
         default=5,
     )
 
     P = p.parse_args()
 
-    c1 = {
+    context = {
         "model": P.model,
+        "itype": 3, # path to space
+        "iemsct": 2, # radiance model
+        "im": 0, # single scattering
+        "ihaze": 5, # urban aerosol
         "h1": P.obsalt,  # of observer
         "angle": P.zenang,  # of observer
         "wlshort": P.short,
         "wllong": P.long,
         "wlstep": P.step,
     }
-    # %%
-    TR = lowtran.scatter(c1)
-    # %%
-    if P.outfn:
-        outfn = Path(P.outfn).expanduser()
-        print("writing", outfn)
-        TR.to_netcdf(outfn)
-    # %%
-    scatter(TR, c1)
+    
+    TR = lowtran.loopangle(context)
+    
+    scatter(TR, context)
 
     show()
 

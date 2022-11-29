@@ -36,15 +36,22 @@ def main():
         type=float,
         default=0.0,
     )
-    p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=200)
-    p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=30000)
-    p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
+    p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=200)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=30000)
+    p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     P = p.parse_args()
 
-    c1 = {
+    context = {
+        "model": 5, # default
+        "itype": 1, # horizontal path
+        "iemsct": 0, # tx model
+        "im": 0, # user-defined horizontal model
+        "ird1": 1, # card2C on
+        "ihaze": 5, # urban aerosol
         "zmdl": P.obsalt,
         "h1": P.obsalt,
         "range_km": P.range_km,
+        "angle": 0,
         "wlshort": P.short,
         "wllong": P.long,
         "wlstep": P.step,
@@ -56,11 +63,11 @@ def main():
         "wmol": [93.96, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     }
 
-    c1.update(atmos)
+    context.update(atmos)
 
-    TR = lowtran.userhoriztrans(c1).squeeze()
+    TR = lowtran.lowtran(context).squeeze()
 
-    horiz(TR, c1)
+    horiz(TR, context)
 
     show()
 

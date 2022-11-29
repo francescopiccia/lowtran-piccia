@@ -3,7 +3,7 @@
 ---
 ## Changes wrt main repo
 
->We implemented an clear interface to some additional parameters used by lowtran, such as areosol scattering. We also removed matlab code and we will only use python.
+>We implemented a clear interface to lowtran with some additional parameters not available in the original repository, such as areosol scattering. We also removed matlab code and we will only use python.
 ---
 
 LOWTRAN7 atmospheric absorption extinction model.
@@ -16,8 +16,10 @@ The ``LOWFIL`` program in reference/lowtran7.10.f was not connected as I had pre
 
 The ``LOWSCAN`` spectral sampling (scanning) program in reference/lowtran7.13.f was not connected as I had no need for coarser spectral resolution.
 
-:Python API Author: Michael Hirsch
-:License: MIT
+| Python API Author | License |
+| --- | --- |
+| Micheal Hirsch  | MIT |
+
 
 ## Install
 
@@ -78,7 +80,7 @@ If you don't want to specify `iseasn`, `ivulc`, `icstl`, `icld`, `h2`, `range_km
 
 
 Additional info on input parameters:
-   - model (atmodphere model)
+   - model (atmosphere model)
       - 0: Horizontal path with user specified parameters (itype must be 1)
       - 1: Tropical Atmosphere
       - 2: Midlatitude Summer

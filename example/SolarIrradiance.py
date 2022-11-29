@@ -21,29 +21,33 @@ def main():
         type=float,
         default=[0, 60, 80],
     )
-    p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=200)
-    p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=30000)
-    p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
+    p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=200)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=30000)
+    p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     p.add_argument(
         "--model",
-        help='0-6, see Card1 "model" reference. 5=subarctic winter',
+        help='0-6, default 5=subarctic winter',
         type=int,
         default=5,
     )
     P = p.parse_args()
 
-    c1 = {
+    context = {
         "model": P.model,
         "h1": P.obsalt,
+        "itype": 3, # path to space
+        "iemsct": 3, # solar irradiance
+        "im": 0, # single scattering
+        "ihaze": 5, # urban aerosol
         "angle": P.zenang,  # zenith angle of sun or moon
         "wlshort": P.short,
         "wllong": P.long,
         "wlstep": P.step,
     }
 
-    irr = lowtran.irradiance(c1)
+    irr = lowtran.loopangle(context)
 
-    irradiance(irr, c1, True)
+    irradiance(irr, context, True)
 
     show()
 

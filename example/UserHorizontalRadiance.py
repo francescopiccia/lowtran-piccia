@@ -2,31 +2,31 @@
 """
 Horizontal cases are for special use by advanced users.
 """
-from pathlib import Path
 from matplotlib.pyplot import show
 from argparse import ArgumentParser
 import lowtran
-from lowtran.plot import radtime
+from lowtran.plot import irradiance
+from dateutil.parser import parse
 
 
 def main():
     p = ArgumentParser(description="Lowtran 7 interface")
-    p.add_argument(
-        "ptfn",
-        help="csv file with "
-        "time, relative humidity [%],ambient temperature [K], total pressure (millibar)",
-        nargs="?",
-    )
+    
     p.add_argument("-z", "--obsalt", help="altitude of observer [km]", type=float, default=0.05)
     p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=200)
     p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=30000)
     p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
-    p.add_argument("-o", "--outfn", help="HDF5 file to write")
     P = p.parse_args()
 
-    # %% low-level Lowtran configuration for this scenario, don't change
-    c1 = {
+    context = {
+        "model": 0, # meteorogical data
+        "itype": 1, # horizontal path
+        "iemsct": 1, # radiance model
+        "im": 1, # multiple scattering
+        "ihaze": 5, # urban aerosol
+        "ird1": 1, # card2C on
         "range_km": P.obsalt,
+        "angle": 0,
         "zmdl": P.obsalt,
         "h1": P.obsalt,
         "wlshort": P.short,
@@ -34,15 +34,18 @@ def main():
         "wlstep": P.step,
     }
 
-    TR = lowtran.horizrad(P.ptfn, P.outfn, c1)
+    atmos = {
+        "p": 949.0,
+        "t": 283.8,
+        "wmol": [93.96, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "time": parse("2022-11-28T12")
+    }
 
-    # %% write to HDF5
-    if P.outfn:
-        outfn = Path(P.outfn).expanduser()
-        print("writing", outfn)
-        TR.to_netcdf(outfn)
+    context.update(atmos)
+    
+    TR = lowtran.lowtran(context)
 
-    radtime(TR, c1)
+    irradiance(TR, context)
 
     show()
 

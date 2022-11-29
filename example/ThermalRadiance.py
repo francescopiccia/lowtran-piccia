@@ -29,36 +29,34 @@ def main():
         type=float,
         default=[0.0, 60, 80],
     )
-    p.add_argument("-s", "--short", help="shortest wavelength nm ", type=float, default=200)
-    p.add_argument("-l", "--long", help="longest wavelength nm ", type=float, default=30000)
-    p.add_argument("-step", help="wavelength step size cm^-1", type=float, default=20)
-    p.add_argument("-o", "--outfn", help="HDF5 file to write")
+    p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=200)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=30000)
+    p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     p.add_argument(
         "--model",
-        help='0-6, see Card1 "model" reference. 5=subarctic winter',
+        help='0-6, default 5=subarctic winter',
         type=int,
         default=5,
     )
 
     P = p.parse_args()
 
-    c1 = {
+    context = {
         "model": P.model,
         "h1": P.obsalt,  # of observer
+        "itype": 3, # path to space
+        "iemsct": 1, # thermal radiance
+        "im": 0, # single scattering
+        "ihaze": 5, # urban aerosol
         "angle": P.zenang,  # of observer
         "wlshort": P.short,
         "wllong": P.long,
         "wlstep": P.step,
     }
 
-    TR = lowtran.radiance(c1)
-    # %%
-    if P.outfn:
-        outfn = Path(P.outfn).expanduser()
-        print("writing", outfn)
-        TR.to_netcdf(outfn)
+    TR = lowtran.loopangle(context)
 
-    radiance(TR, c1, True)
+    radiance(TR, context, True)
 
     show()
 
