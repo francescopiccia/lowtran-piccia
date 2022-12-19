@@ -20,7 +20,7 @@ def main():
         default=[0, 60, 80],
     )
     p.add_argument("-s", "--short", help="shortest wavelength [nm]", type=float, default=200)
-    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=200)
+    p.add_argument("-l", "--long", help="longest wavelength [nm]", type=float, default=2000)
     p.add_argument("-step", help="wavelength step size [cm^-1]", type=float, default=20)
     p.add_argument(
         "--model", 
