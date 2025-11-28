@@ -6,11 +6,35 @@ import logging
 import xarray
 import numpy as np
 from typing import Any
+import os
+from types import ModuleType
 
 from .cmake import build
 
 
-def import_f2py_mod(name: str):
+def check() -> ModuleType:
+    try:
+        lowtran7 = import_f2py_mod("lowtran7")
+    except ImportError:
+        src = Path(__file__).parent
+        build(source_dir=src, build_dir=src / "build")
+        lowtran7 = import_f2py_mod("lowtran7")
+
+    return lowtran7
+
+
+def import_f2py_mod(name: str) -> ModuleType:
+
+    if os.name == "nt":
+        # https://github.com/space-physics/lowtran/issues/19
+        # code inspired by scipy._distributor_init.py for loading DLLs on Window
+        dll_path = (Path(__file__) / "../build/lowtran7/.libs").resolve()
+        if dll_path.is_dir():
+            # add the folder for Python 3.8 and above
+            logging.info(f"Adding {dll_path} to DLL search path")
+            os.add_dll_directory(dll_path)  # type: ignore
+        else:
+            logging.info(f"Could not find {dll_path} to add to DLL search path")
 
     mod_name = name + distutils.sysconfig.get_config_var("EXT_SUFFIX")  # type: ignore
     mod_file = Path(__file__).parent / mod_name
@@ -79,7 +103,6 @@ def lowtran(context: dict[str, Any]) -> xarray.Dataset:
     context.setdefault("icstl", 1)
     context.setdefault("icld", 0)
     context.setdefault("range_km", 0)
-    
 
     # input check
     assert len(context["wmol"]) == 12, "see Lowtran user manual for 12 values of WMOL"
@@ -93,7 +116,7 @@ def lowtran(context: dict[str, Any]) -> xarray.Dataset:
 
     if not 0 < wlshort and wllong <= 50000:
         logging.critical("specified model range 0 <= wavelength [cm^-1] <= 50000")
-        
+
     # invoke lowtran
     try:
         lowtran7 = import_f2py_mod("lowtran7")
@@ -102,31 +125,31 @@ def lowtran(context: dict[str, Any]) -> xarray.Dataset:
         lowtran7 = import_f2py_mod("lowtran7")
 
     Tx, V, Alam, trace, unif, suma, irrad, sumvv = lowtran7.lwtrn7(
-        True,               # Enable Python interface
-        nwl,                # wavelength step
-        wllong,             # wavelength max
-        wlshort,            # wavelength min
-        context["wlstep"],  # wavelenght step in cm-1
-        context["model"],   # card1 atmosphere model (0-7)
-        context["itype"],   # card1 path type (1-3)
-        context["iemsct"],  # card1 execution type (0-3)
-        context["im"],      # card1 scattering off/on (0-1)
-        context["ihaze"],   # card2 aerosol type (0-10)
-        context["iseasn"],  # card2 seasonal aerosol (0-2)
-        context["ivulc"],   # card2 aerosol profile and stratospheric aerosol (0-8)
-        context["icstl"],   # card2 air mass character (1-10) >> HAZE 3 ONLY
-        context["icld"],    # card2 cloud and rain models (0-20)
-        context["ird1"],    # activate optional card2C off/on (0-1) for custom path
-        context["zmdl"],    # card2C altitude layer boudnary [km]
-        context["p"],       # card2C pressure layer boundary
-        context["t"],       # card2C temperature layer boundary
-        context["wmol"],    # card2C individual molecular species, see T11A p32
-        context["h1"],      # card3 initial altitude [km]
-        context["h2"],      # card3 final altitude [km] >> ITYPE 2 ONLY
-        context["angle"],   # card3 initial zenith angle from h1 [deg]
-        context["range_km"],# card3 path length [km]
+        True,                 # Enable Python interface
+        nwl,                  # wavelength step
+        wllong,               # wavelength max
+        wlshort,              # wavelength min
+        context["wlstep"],    # wavelenght step in cm-1
+        context["model"],     # card1 atmosphere model (0-7)
+        context["itype"],     # card1 path type (1-3)
+        context["iemsct"],    # card1 execution type (0-3)
+        context["im"],        # card1 scattering off/on (0-1)
+        context["ihaze"],     # card2 aerosol type (0-10)
+        context["iseasn"],    # card2 seasonal aerosol (0-2)
+        context["ivulc"],     # card2 aerosol profile and stratospheric aerosol (0-8)
+        context["icstl"],     # card2 air mass character (1-10) >> HAZE 3 ONLY
+        context["icld"],      # card2 cloud and rain models (0-20)
+        context["ird1"],      # activate optional card2C off/on (0-1) for custom path
+        context["zmdl"],      # card2C altitude layer boudnary [km]
+        context["p"],         # card2C pressure layer boundary
+        context["t"],         # card2C temperature layer boundary
+        context["wmol"],      # card2C individual molecular species, see T11A p32
+        context["h1"],        # card3 initial altitude [km]
+        context["h2"],        # card3 final altitude [km] >> ITYPE 2 ONLY
+        context["angle"],     # card3 initial zenith angle from h1 [deg]
+        context["range_km"],  # card3 path length [km]
     )
-    
+
     dims = ("time", "wavelength_nm", "angle_deg")
     TR = xarray.Dataset(
         {

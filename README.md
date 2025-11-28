@@ -12,10 +12,6 @@ Updated to be platform independent and easily accessible from Python.
 The main LOWTRAN program is accessible from Python by using direct memory transfers instead of the cumbersome and error-prone process of writing/reading text files.
 `xarray.Dataset` high-performance, simple N-D array data is passed out, with appropriate metadata.
 
-The ``LOWFIL`` program in reference/lowtran7.10.f was not connected as I had previously implemented my own filter function directly in Python.
-
-The ``LOWSCAN`` spectral sampling (scanning) program in reference/lowtran7.13.f was not connected as I had no need for coarser spectral resolution.
-
 | Python API Author | License |
 | --- | --- |
 | Micheal Hirsch  | MIT |
@@ -25,21 +21,19 @@ The ``LOWSCAN`` spectral sampling (scanning) program in reference/lowtran7.13.f 
 
 Lowtran requires a Fortran compiler and CMake.
 We use `f2py` (part of `numpy`) to seamlessly use Fortran libraries from Python by special compilation of the Fortran library with auto-generated shim code.
+For Python 3.12, make sure to install setuptools using pip, i.e., `pip install setuptools` and make sure meson is available on the system.
 
 1. If a Fortran compiler is not already installed, install Gfortran:
 
    * Linux: `apt install gfortran`
    * Mac: `brew install gcc`
-   * Windows: use any one of Windows Subsystem for Linux, MSYS2, MinGW to get Gfortran or use Intel oneAPI.
-
-Note: Cygwin is essentially obsolete due to Windows Subsystem for Linux. Cygwin is broken for Numpy and Gfortran and general.
+   * Windows: Windows Subsystem for Linux
 
 2. Install Python Lowtran code
 
    ```sh
    pip install -e .
    ```
-  
 
 ## Input
 You can call the main model function `lowtran(context)` where context is a dict with this structure:
@@ -137,10 +131,12 @@ Additional info on input parameters:
 ## Notes
 
 LOWTRAN7
-[User manual](https://apps.dtic.mil/sti/pdfs/ADA206773.pdf)
+[User manual](http://www.dtic.mil/dtic/tr/fulltext/u2/a206773.pdf)
 Refer to this to understand what parameters are set to default.
 
 ### Reference
 
 * Original 1994 Lowtran7 [Code](http://www1.ncdc.noaa.gov/pub/data/software/lowtran/)
 * Original API repository [lowtran](https://github.com/space-physics/lowtran/)
+* `LOWFIL` program in reference/lowtran7.10.f was not connected as we had previously implemented a filter function directly in  Python.
+* `LOWSCAN` spectral sampling (scanning) program in `reference/lowtran7.13.f` was not connected as we had no need for coarser spectral resolution.

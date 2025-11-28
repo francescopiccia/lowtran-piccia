@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17...3.25)
+cmake_minimum_required(VERSION 3.19...3.26)
 # 3.17+ for Python_SOABI
 
 project(lowtran LANGUAGES Fortran)
@@ -8,10 +8,7 @@ enable_testing()
 option(BUILD_TESTING "Build testing tools" ON)
 option(matlab "build matlab interface")
 
-# --- auto-ignore build directory
-if(NOT EXISTS ${PROJECT_BINARY_DIR}/.gitignore)
-  file(WRITE ${PROJECT_BINARY_DIR}/.gitignore "*")
-endif()
+file(GENERATE OUTPUT .gitignore CONTENT "*")
 
 add_subdirectory(src/lowtran)
 
@@ -41,11 +38,9 @@ add_test(NAME MatlabNumpy COMMAND matlab -batch "py.numpy.arange(1);")
 set_property(TEST MatlabNumpy PROPERTY FIXTURES_SETUP MatlabNumpy)
 
 add_test(NAME MatlabLowtran
-COMMAND ${Matlab_MAIN_PROGRAM} -batch "r = runtests('lowtran'); assertSuccess(r)"
+COMMAND ${Matlab_MAIN_PROGRAM} -batch "r = runtests('lowtran'); assert(~isempty(r)); assertSuccess(r)"
 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 set_property(TEST MatlabLowtran PROPERTY FIXTURES_REQUIRED MatlabNumpy)
-
-set(property TEST MatlabNumpy MatlabLowtran PROPERTY TIMEOUT 90)
 
 endif()
